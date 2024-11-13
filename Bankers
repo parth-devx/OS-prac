@@ -1,0 +1,124 @@
+#include <stdio.h>
+
+#define MAX_PROCESSES 10
+#define MAX_RESOURCES 10
+
+int max[MAX_PROCESSES][MAX_RESOURCES], allocation[MAX_PROCESSES][MAX_RESOURCES], need[MAX_PROCESSES][MAX_RESOURCES];
+int avail[MAX_RESOURCES];
+int np, nr;
+
+void readMatrix(int matrix[MAX_PROCESSES][MAX_RESOURCES], int rows, int cols) {
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+            scanf("%d", &matrix[i][j]);
+        }
+    }
+}
+
+void displayMatrix(int matrix[MAX_PROCESSES][MAX_RESOURCES], int rows, int cols) {
+    for (int i = 0; i < rows; i++) {
+        printf("\nP%d", i);
+        for (int j = 0; j < cols; j++) {
+            printf(" %d", matrix[i][j]);
+        }
+    }
+}
+
+void calculateNeed() {
+    for (int i = 0; i < np; i++) {
+        for (int j = 0; j < nr; j++) {
+            need[i][j] = max[i][j] - allocation[i][j];
+        }
+    }
+}
+
+void banker() {
+    int finish[MAX_PROCESSES] = {0};
+    int safeSeq[MAX_PROCESSES];
+    int work[MAX_RESOURCES];
+    int count = 0;
+
+    // Initialize work as available
+    for (int i = 0; i < nr; i++) {
+        work[i] = avail[i];
+    }
+
+    while (count < np) {
+        int found = 0;
+        for (int i = 0; i < np; i++) {
+            if (finish[i] == 0) {
+                int j;
+                for (j = 0; j < nr; j++) {
+                    if (need[i][j] > work[j]) {
+                        break;
+                    }
+                }
+
+                if (j == nr) {
+                    for (int k = 0; k < nr; k++) {
+                        work[k] += allocation[i][k];
+                    }
+
+                    safeSeq[count++] = i;
+                    finish[i] = 1;
+                    found = 1;
+                }
+            }
+        }
+
+        if (found == 0) {
+            printf("\nThe system is in deadlock.\n");
+            return;
+        }
+    }
+
+    printf("\nThe system is in a safe state.\nSafe sequence is: ");
+    for (int i = 0; i < np; i++) {
+        printf("P%d ", safeSeq[i]);
+    }
+    printf("\n");
+}
+
+int main() {
+    // Read input
+    printf("\nEnter number of processes: ");
+    scanf("%d", &np);
+    printf("\nEnter number of resources: ");
+    scanf("%d", &nr);
+
+    printf("\nEnter initial allocation matrix:\n");
+    readMatrix(allocation, np, nr);
+
+    printf("\nEnter maximum requirement matrix:\n");
+    readMatrix(max, np, nr);
+
+    printf("\nEnter available resources: ");
+    for (int j = 0; j < nr; j++) {
+        scanf("%d", &avail[j]);
+    }
+
+    // Display entered data
+    printf("\n****** Entered Data is ********\n\n");
+
+    printf("\nInitial allocation:\n");
+    displayMatrix(allocation, np, nr);
+
+    printf("\n\nMaximum Requirement:\n");
+    displayMatrix(max, np, nr);
+
+    printf("\nAvailable Resources: ");
+    for (int j = 0; j < nr; j++) {
+        printf("%d ", avail[j]);
+    }
+    printf("\n");
+
+    // Calculate and display need
+    calculateNeed();
+    printf("\n\nNeed is:\n");
+    displayMatrix(need, np, nr);
+
+    // Execute processes using Banker's Algorithm
+    banker();
+
+    return 0;
+}
